@@ -62,18 +62,6 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 	if (unlikely(!otcph))
 		goto SPOOFTCP_RETURN;
 
-	struct flowi6 fl6;
-	memset(&fl6, 0, sizeof(fl6));
-	fl6.flowi6_proto = IPPROTO_TCP;
-	fl6.saddr = oip6h->saddr;
-	fl6.daddr = oip6h->daddr;
-	// fl6.flowlabel = ip6_flowlabel(oip6h);
-	fl6.fl6_sport = otcph->source;
-	fl6.fl6_dport = otcph->dest;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
-	fl6.flowi6_oif = l3mdev_master_ifindex(skb_dst(oskb)->dev);
-#endif
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 	struct net *net = xt_net(par);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
@@ -81,14 +69,12 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 #else
 	struct net *net = dev_net(oskb->dev);
 #endif
-	struct dst_entry *dst = ip6_route_output(net, NULL, &fl6);
+
+	struct dst_entry *dst = dst_clone(skb_dst(oskb));
 	if (unlikely(dst->error)) {
 		dst_release(dst);
 		goto SPOOFTCP_RETURN;
 	}
-	dst = xfrm_lookup(net, dst, flowi6_to_flowi(&fl6), NULL, 0);
-	if (IS_ERR(dst))
-		goto SPOOFTCP_RETURN;
 	
 	unsigned int hh_len = (dst->dev->hard_header_len + 15)&~15;
 	
