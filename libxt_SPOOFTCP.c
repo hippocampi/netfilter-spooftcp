@@ -8,9 +8,9 @@
 
 enum {
 	O_TTL,
-	O_WRONG_CHKSUM,
 	O_TCP_FLAGS,
-	O_INV_SEQ,
+	O_CORRUPT_CHKSUM,
+	O_CORRUPT_SEQ,
 };
 
 /* Copied from libxt_tcp.c */
@@ -76,17 +76,18 @@ static void print_tcpf(__u8 flags)
 		printf("NONE");
 }
 
-static void SPOOFTCP_help6()
+static void SPOOFTCP_help()
 {
-	printf("SPOOFTCP options:\n --hoplimit value\tThe hop limit value of spoofed packet (0 for inherit)\n");
-	printf(" --tcp-flags\t TCP FLAGS of spoofed packet\n");
-	printf(" --corrupt-checksum\t Do not calculate checksum for spoofed packet\n");
-	printf(" --corrupt-seq\t Do not generate TCP SEQ for spoofed packet\n");
+	printf("SPOOFTCP target options:\n"
+		" --ttl value\tThe hop limit/ttl value of spoofed packet (0 for inherit)\n"
+		" --tcp-flags\tTCP FLAGS of spoofed packet\n"
+		" --corrupt-checksum\tInvert checksum for spoofed packet\n"
+		" --corrupt-seq\tInvert TCP SEQ # for spoofed packet\n");
 }
 
 static const struct xt_option_entry SPOOFTCP_opts[] = {
 	{
-		.name	= "hoplimit",
+		.name	= "ttl",
 		.id		= O_TTL,
 		.type	= XTTYPE_UINT8,
 		.min	= 0,
@@ -94,18 +95,18 @@ static const struct xt_option_entry SPOOFTCP_opts[] = {
 		.flags	= XTOPT_PUT, XTOPT_POINTER(struct xt_spooftcp_info, ttl),
 	},
 	{
-		.name	= "corrupt-checksum",
-		.id		= O_WRONG_CHKSUM,
-		.type	= XTTYPE_NONE,
-	},
-	{
 		.name	= "tcp-flags",
 		.id		= O_TCP_FLAGS,
 		.type	= XTTYPE_STRING,
 	},
 	{
+		.name	= "corrupt-checksum",
+		.id		= O_CORRUPT_CHKSUM,
+		.type	= XTTYPE_NONE,
+	},
+	{
 		.name	= "corrupt-seq",
-		.id		= O_INV_SEQ,
+		.id		= O_CORRUPT_SEQ,
 		.type	= XTTYPE_NONE,
 	},
 	XTOPT_TABLEEND,
@@ -122,23 +123,23 @@ static void SPOOFTCP_parse(struct xt_option_call *cb)
 	{
 		case O_TTL:
 			break; // Do nothing
-		case O_WRONG_CHKSUM:
-			info->wrong_chksum = true;
-			break;
 		case O_TCP_FLAGS:
 			info->tcp_flags = parse_tcp_flag(cb->arg);
 			break;
-		case O_INV_SEQ:
-			info->inv_seq = true;
+		case O_CORRUPT_CHKSUM:
+			info->corrupt_chksum = true;
+			break;
+		case O_CORRUPT_SEQ:
+			info->corrupt_seq = true;
 			break;
 	}
 }
 
 static void SPOOFTCP_check(struct xt_fcheck_call *cb)
 {
-	if (cb->xflags == 0)
+	if (!(cb->xflags & (1 << O_TCP_FLAGS)))
 		xtables_error(PARAMETER_PROBLEM,
-		           "SPOOFTCP target: At least one parameter is required");
+		           "SPOOFTCP target: --tcp-flags is required");
 }
 
 static void SPOOFTCP_print(const void *ip, const struct xt_entry_target *target,
@@ -147,14 +148,14 @@ static void SPOOFTCP_print(const void *ip, const struct xt_entry_target *target,
 	const struct xt_spooftcp_info *info =
 		(const struct xt_spooftcp_info *)target->data;
 	if (info->ttl)
-		printf(" SPOOFTCP hoplimit = %u", info->ttl);
+		printf(" SPOOFTCP ttl = %u", info->ttl);
 	else
-		printf(" SPOOFTCP hoplimit inherit");
+		printf(" SPOOFTCP ttl inherit");
 
-	if (info->wrong_chksum)
+	if (info->corrupt_chksum)
 		printf(" Corrupt checksum");
 
-	if (info->inv_seq)
+	if (info->corrupt_seq)
 		printf(" Corrupt SEQ");
 
 	printf(" tcp flags ");
@@ -172,23 +173,23 @@ static void SPOOFTCP_save(const void *ip, const struct xt_entry_target *target)
 	if (info->ttl)
 		printf(" --%s %u", SPOOFTCP_opts[O_TTL].name, info->ttl);
 
-	if (info->wrong_chksum)
-		printf(" --%s ", SPOOFTCP_opts[O_WRONG_CHKSUM].name);
+	if (info->corrupt_chksum)
+		printf(" --%s", SPOOFTCP_opts[O_CORRUPT_CHKSUM].name);
 
-	if (info->inv_seq)
-		printf(" --%s ", SPOOFTCP_opts[O_INV_SEQ].name);
+	if (info->corrupt_seq)
+		printf(" --%s", SPOOFTCP_opts[O_CORRUPT_SEQ].name);
 
 	printf(" --%s ", SPOOFTCP_opts[O_TCP_FLAGS].name);
 	print_tcpf(info->tcp_flags);
 }
 
-static struct xtables_target spooftcp_tg6_reg = {
-	.family			= NFPROTO_IPV6,
+static struct xtables_target spooftcp_tg_reg = {
+	.family			= NFPROTO_UNSPEC,
 	.name			= "SPOOFTCP",
 	.version		= XTABLES_VERSION,
 	.size			= XT_ALIGN(sizeof(struct xt_spooftcp_info)),
 	.userspacesize	= XT_ALIGN(sizeof(struct xt_spooftcp_info)),
-	.help			= SPOOFTCP_help6,
+	.help			= SPOOFTCP_help,
 	.print			= SPOOFTCP_print,
 	.save			= SPOOFTCP_save,
 	.x6_parse		= SPOOFTCP_parse,
@@ -198,5 +199,5 @@ static struct xtables_target spooftcp_tg6_reg = {
 
 void _init(void)
 {
-	xtables_register_target(&spooftcp_tg6_reg);
+	xtables_register_target(&spooftcp_tg_reg);
 }
