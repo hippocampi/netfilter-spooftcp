@@ -22,6 +22,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("LGA1150");
 MODULE_DESCRIPTION("Xtables: Send spoofed TCP packets");
+MODULE_ALIAS("ipt_SPOOFTCP");
 MODULE_ALIAS("ip6t_SPOOFTCP");
 
 static DEFINE_PER_CPU(bool, spooftcp_active);
@@ -31,7 +32,7 @@ static struct tcphdr * spooftcp_tcphdr_put(struct sk_buff *nskb, const struct tc
 	struct tcphdr *tcph;
 
 	skb_reset_transport_header(nskb);
-	tcph = (struct tcphdr *)skb_put(nskb, sizeof(struct tcphdr));
+	tcph = (struct tcphdr *)skb_put(nskb, sizeof(struct tcphdr) + info->payload_len);
 
 	/* Truncate to length (no data) */
 	tcph->doff = sizeof(struct tcphdr)/4;
@@ -94,7 +95,8 @@ static unsigned int spooftcp_tg4(struct sk_buff *oskb, const struct xt_action_pa
 	}
 	
 	nskb = alloc_skb(sizeof(struct iphdr) + sizeof(struct tcphdr) +
-			 LL_MAX_HEADER, GFP_ATOMIC);
+			 LL_MAX_HEADER + info->payload_len,
+			 GFP_ATOMIC);
 
 	if (unlikely(!nskb)) {
 		net_dbg_ratelimited("cannot alloc skb\n");
@@ -127,7 +129,7 @@ static unsigned int spooftcp_tg4(struct sk_buff *oskb, const struct xt_action_pa
 
 	tcph = spooftcp_tcphdr_put(nskb, otcph, info);
 
-	tcph->check = ~tcp_v4_check(sizeof(struct tcphdr), iph->saddr,
+	tcph->check = ~tcp_v4_check(sizeof(struct tcphdr) + info->payload_len, iph->saddr,
 				    iph->daddr, 0);
 	nskb->ip_summed = CHECKSUM_PARTIAL;
 	nskb->csum_start = (unsigned char *)tcph - nskb->head;
@@ -226,7 +228,7 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 	hh_len = (dst->dev->hard_header_len + 15)&~15;
 	
 	nskb = alloc_skb(hh_len + 15 + dst->header_len + sizeof(struct ipv6hdr)
-			 + sizeof(struct tcphdr) + dst->trailer_len,
+			 + sizeof(struct tcphdr) + dst->trailer_len + info->payload_len,
 			 GFP_ATOMIC);
 
 	if (unlikely(!nskb)) {
@@ -254,9 +256,9 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 	tcph->check = 0;
 	tcph->check = csum_ipv6_magic(&ipv6_hdr(nskb)->saddr,
 				      &ipv6_hdr(nskb)->daddr,
-				      sizeof(struct tcphdr), IPPROTO_TCP,
+				      sizeof(struct tcphdr) + info->payload_len, IPPROTO_TCP,
 				      csum_partial(tcph,
-						   sizeof(struct tcphdr), 0));
+						   sizeof(struct tcphdr) + info->payload_len, 0));
 	
 	if (info->corrupt_chksum)
 		tcph->check = ~tcph->check;

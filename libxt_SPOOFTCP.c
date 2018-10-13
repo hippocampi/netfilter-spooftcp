@@ -11,6 +11,7 @@ enum {
 	O_TCP_FLAGS,
 	O_CORRUPT_CHKSUM,
 	O_CORRUPT_SEQ,
+	O_PAYLOAD_LEN,
 };
 
 /* Copied from libxt_tcp.c */
@@ -82,7 +83,8 @@ static void SPOOFTCP_help()
 		" --ttl value\tThe hop limit/ttl value of spoofed packet (0 for inherit)\n"
 		" --tcp-flags\tTCP FLAGS of spoofed packet\n"
 		" --corrupt-checksum\tInvert checksum for spoofed packet\n"
-		" --corrupt-seq\tInvert TCP SEQ # for spoofed packet\n");
+		" --corrupt-seq\tInvert TCP SEQ # for spoofed packet\n"
+		" --payload-length value\tLength of TCP payload (max 255)");
 }
 
 static const struct xt_option_entry SPOOFTCP_opts[] = {
@@ -109,6 +111,14 @@ static const struct xt_option_entry SPOOFTCP_opts[] = {
 		.id		= O_CORRUPT_SEQ,
 		.type	= XTTYPE_NONE,
 	},
+	{
+		.name	= "payload-length",
+		.id		= O_PAYLOAD_LEN,
+		.type	= XTTYPE_UINT8,
+		.min	= 0,
+		.max	= UINT8_MAX,
+		.flags	= XTOPT_PUT, XTOPT_POINTER(struct xt_spooftcp_info, payload_len),
+	},
 	XTOPT_TABLEEND,
 };
 
@@ -122,6 +132,7 @@ static void SPOOFTCP_parse(struct xt_option_call *cb)
 	switch(entry->id)
 	{
 		case O_TTL:
+		case O_PAYLOAD_LEN:
 			break; // Do nothing
 		case O_TCP_FLAGS:
 			info->tcp_flags = parse_tcp_flag(cb->arg);
@@ -152,17 +163,20 @@ static void SPOOFTCP_print(const void *ip, const struct xt_entry_target *target,
 	else
 		printf(" SPOOFTCP ttl inherit");
 
+	printf(" tcp flags ");
+	if (numeric)
+		printf("0x%02X", info->tcp_flags);
+	else
+		print_tcpf(info->tcp_flags);
+
 	if (info->corrupt_chksum)
 		printf(" Corrupt checksum");
 
 	if (info->corrupt_seq)
 		printf(" Corrupt SEQ");
 
-	printf(" tcp flags ");
-	if (numeric)
-		printf("0x%02X", info->tcp_flags);
-	else
-		print_tcpf(info->tcp_flags);
+	if (info->payload_len)
+		printf(" Payload length %u", info->payload_len);
 }
 
 static void SPOOFTCP_save(const void *ip, const struct xt_entry_target *target)
@@ -173,14 +187,17 @@ static void SPOOFTCP_save(const void *ip, const struct xt_entry_target *target)
 	if (info->ttl)
 		printf(" --%s %u", SPOOFTCP_opts[O_TTL].name, info->ttl);
 
+	printf(" --%s ", SPOOFTCP_opts[O_TCP_FLAGS].name);
+	print_tcpf(info->tcp_flags);
+
 	if (info->corrupt_chksum)
 		printf(" --%s", SPOOFTCP_opts[O_CORRUPT_CHKSUM].name);
 
 	if (info->corrupt_seq)
 		printf(" --%s", SPOOFTCP_opts[O_CORRUPT_SEQ].name);
 
-	printf(" --%s ", SPOOFTCP_opts[O_TCP_FLAGS].name);
-	print_tcpf(info->tcp_flags);
+	if (info->payload_len)
+		printf(" --%s %u", SPOOFTCP_opts[O_PAYLOAD_LEN].name, info->payload_len);
 }
 
 static struct xtables_target spooftcp_tg_reg = {
