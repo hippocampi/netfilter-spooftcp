@@ -3,6 +3,7 @@
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/percpu.h>
+#include <linux/delay.h>
 #include <net/ip.h>
 #include <net/ipv6.h>
 #include <net/ip6_checksum.h>
@@ -157,6 +158,7 @@ static unsigned int spooftcp_tg4(struct sk_buff *oskb, const struct xt_action_pa
 	ip_local_out(nskb);
 #endif
 	__this_cpu_write(spooftcp_active, false);
+	mdelay(info->delay);
 
 	return XT_CONTINUE;
 }
@@ -282,6 +284,7 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 	ip6_local_out(nskb);
 #endif
 	__this_cpu_write(spooftcp_active, false);
+	mdelay(info->delay);
 
 	return XT_CONTINUE;
 }

@@ -11,6 +11,7 @@ enum {
 	O_TCP_FLAGS,
 	O_CORRUPT_CHKSUM,
 	O_CORRUPT_SEQ,
+	O_DELAY,
 	O_PAYLOAD_LEN,
 };
 
@@ -84,7 +85,8 @@ static void SPOOFTCP_help()
 		" --tcp-flags\tTCP FLAGS of spoofed packet\n"
 		" --corrupt-checksum\tInvert checksum for spoofed packet\n"
 		" --corrupt-seq\tInvert TCP SEQ # for spoofed packet\n"
-		" --payload-length value\tLength of TCP payload (max 255)");
+		" --delay value\tDelay the matched(original) packet by <value> ms (max 255)\n"
+		" --payload-length value\tLength of TCP payload (max 255)\n");
 }
 
 static const struct xt_option_entry SPOOFTCP_opts[] = {
@@ -112,6 +114,14 @@ static const struct xt_option_entry SPOOFTCP_opts[] = {
 		.type	= XTTYPE_NONE,
 	},
 	{
+		.name	= "delay",
+		.id		= O_DELAY,
+		.type	= XTTYPE_UINT8,
+		.min	= 0,
+		.max	= UINT8_MAX,
+		.flags	= XTOPT_PUT, XTOPT_POINTER(struct xt_spooftcp_info, delay),
+	},
+	{
 		.name	= "payload-length",
 		.id		= O_PAYLOAD_LEN,
 		.type	= XTTYPE_UINT8,
@@ -132,6 +142,7 @@ static void SPOOFTCP_parse(struct xt_option_call *cb)
 	switch(entry->id)
 	{
 		case O_TTL:
+		case O_DELAY:
 		case O_PAYLOAD_LEN:
 			break; // Do nothing
 		case O_TCP_FLAGS:
@@ -175,6 +186,9 @@ static void SPOOFTCP_print(const void *ip, const struct xt_entry_target *target,
 	if (info->corrupt_seq)
 		printf(" Corrupt SEQ");
 
+	if (info->delay)
+		printf(" Delay by %ums", info->delay);
+
 	if (info->payload_len)
 		printf(" Payload length %u", info->payload_len);
 }
@@ -195,6 +209,9 @@ static void SPOOFTCP_save(const void *ip, const struct xt_entry_target *target)
 
 	if (info->corrupt_seq)
 		printf(" --%s", SPOOFTCP_opts[O_CORRUPT_SEQ].name);
+
+	if (info->delay)
+		printf(" --%s %u", SPOOFTCP_opts[O_DELAY].name, info->delay);
 
 	if (info->payload_len)
 		printf(" --%s %u", SPOOFTCP_opts[O_PAYLOAD_LEN].name, info->payload_len);
