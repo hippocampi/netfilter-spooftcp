@@ -115,7 +115,7 @@ static unsigned int spooftcp_tg4(struct sk_buff *oskb, const struct xt_action_pa
 	iph->version	= 4;
 	iph->ihl	= sizeof(struct iphdr) / 4;
 	iph->tos	= 0;
-	iph->id	= 0;
+	iph->id		= 0;
 	iph->frag_off	= htons(IP_DF);
 	iph->protocol	= IPPROTO_TCP;
 	iph->check	= 0;
@@ -294,21 +294,21 @@ static struct xt_target spooftcp_tg_regs[] __read_mostly = {
 		.family		= NFPROTO_IPV4,
 		.name		= "SPOOFTCP",
 		.target		= spooftcp_tg4,
-		.targetsize = sizeof(struct xt_spooftcp_info),
+		.targetsize 	= sizeof(struct xt_spooftcp_info),
 		.hooks		= 1 << NF_INET_POST_ROUTING,
 		.table		= "mangle",
 		.proto		= IPPROTO_TCP,
-		.me			= THIS_MODULE,
+		.me		= THIS_MODULE,
 	},
 	{
 		.family		= NFPROTO_IPV6,
 		.name		= "SPOOFTCP",
 		.target		= spooftcp_tg6,
-		.targetsize = sizeof(struct xt_spooftcp_info),
+		.targetsize 	= sizeof(struct xt_spooftcp_info),
 		.hooks		= 1 << NF_INET_POST_ROUTING,
 		.table		= "mangle",
 		.proto		= IPPROTO_TCP,
-		.me			= THIS_MODULE,
+		.me		= THIS_MODULE,
 	}
 };
 

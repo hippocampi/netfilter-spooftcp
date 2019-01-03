@@ -92,7 +92,7 @@ static void SPOOFTCP_help()
 static const struct xt_option_entry SPOOFTCP_opts[] = {
 	{
 		.name	= "ttl",
-		.id		= O_TTL,
+		.id	= O_TTL,
 		.type	= XTTYPE_UINT8,
 		.min	= 0,
 		.max	= UINT8_MAX,
@@ -100,22 +100,22 @@ static const struct xt_option_entry SPOOFTCP_opts[] = {
 	},
 	{
 		.name	= "tcp-flags",
-		.id		= O_TCP_FLAGS,
+		.id	= O_TCP_FLAGS,
 		.type	= XTTYPE_STRING,
 	},
 	{
 		.name	= "corrupt-checksum",
-		.id		= O_CORRUPT_CHKSUM,
+		.id	= O_CORRUPT_CHKSUM,
 		.type	= XTTYPE_NONE,
 	},
 	{
 		.name	= "corrupt-seq",
-		.id		= O_CORRUPT_SEQ,
+		.id	= O_CORRUPT_SEQ,
 		.type	= XTTYPE_NONE,
 	},
 	{
 		.name	= "delay",
-		.id		= O_DELAY,
+		.id	= O_DELAY,
 		.type	= XTTYPE_UINT8,
 		.min	= 0,
 		.max	= UINT8_MAX,
@@ -123,7 +123,7 @@ static const struct xt_option_entry SPOOFTCP_opts[] = {
 	},
 	{
 		.name	= "payload-length",
-		.id		= O_PAYLOAD_LEN,
+		.id	= O_PAYLOAD_LEN,
 		.type	= XTTYPE_UINT8,
 		.min	= 0,
 		.max	= UINT8_MAX,
@@ -218,17 +218,17 @@ static void SPOOFTCP_save(const void *ip, const struct xt_entry_target *target)
 }
 
 static struct xtables_target spooftcp_tg_reg = {
-	.family			= NFPROTO_UNSPEC,
-	.name			= "SPOOFTCP",
-	.version		= XTABLES_VERSION,
-	.size			= XT_ALIGN(sizeof(struct xt_spooftcp_info)),
+	.family		= NFPROTO_UNSPEC,
+	.name		= "SPOOFTCP",
+	.version	= XTABLES_VERSION,
+	.size		= XT_ALIGN(sizeof(struct xt_spooftcp_info)),
 	.userspacesize	= XT_ALIGN(sizeof(struct xt_spooftcp_info)),
-	.help			= SPOOFTCP_help,
-	.print			= SPOOFTCP_print,
-	.save			= SPOOFTCP_save,
-	.x6_parse		= SPOOFTCP_parse,
-	.x6_fcheck		= SPOOFTCP_check,
-	.x6_options		= SPOOFTCP_opts,
+	.help		= SPOOFTCP_help,
+	.print		= SPOOFTCP_print,
+	.save		= SPOOFTCP_save,
+	.x6_parse	= SPOOFTCP_parse,
+	.x6_fcheck	= SPOOFTCP_check,
+	.x6_options	= SPOOFTCP_opts,
 };
 
 void _init(void)
