@@ -20,7 +20,7 @@
 #include "xt_SPOOFTCP.h"
 
 
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("LGA1150");
 MODULE_DESCRIPTION("Xtables: Send spoofed TCP packets");
 MODULE_ALIAS("ipt_SPOOFTCP");
@@ -186,7 +186,7 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 
 	if (unlikely((!(ipv6_addr_type(&oip6h->saddr) & IPV6_ADDR_UNICAST)) ||
 	    (!(ipv6_addr_type(&oip6h->daddr) & IPV6_ADDR_UNICAST)))) {
-		pr_debug("addr is not unicast.\n");
+		pr_warn("addr is not unicast.\n");
 		return XT_CONTINUE;
 	}
 
@@ -195,14 +195,14 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 				   &proto, &frag_off);
 
 	if (unlikely((tcphoff < 0) || (tcphoff > oskb->len))) {
-		pr_debug("Cannot get TCP header.\n");
+		pr_warn("Cannot get TCP header.\n");
 		return XT_CONTINUE;
 	}
 
 	otcplen = oskb->len - tcphoff;
 
 	if (unlikely(proto != IPPROTO_TCP || otcplen < sizeof(struct tcphdr))) {
-		pr_debug("proto(%d) != IPPROTO_TCP or too short (len = %d)\n",
+		pr_warn("proto(%d) != IPPROTO_TCP or too short (len = %d)\n",
 			 proto, otcplen);
 		return XT_CONTINUE;
 	}
