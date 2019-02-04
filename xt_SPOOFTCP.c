@@ -158,7 +158,8 @@ static unsigned int spooftcp_tg4(struct sk_buff *oskb, const struct xt_action_pa
 	ip_local_out(nskb);
 #endif
 	__this_cpu_write(spooftcp_active, false);
-	mdelay(info->delay);
+	if (info->delay)
+		mdelay(info->delay);
 
 	return XT_CONTINUE;
 }
@@ -284,7 +285,8 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 	ip6_local_out(nskb);
 #endif
 	__this_cpu_write(spooftcp_active, false);
-	mdelay(info->delay);
+	if (info->delay)
+		mdelay(info->delay);
 
 	return XT_CONTINUE;
 }
