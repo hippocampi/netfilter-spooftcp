@@ -138,7 +138,7 @@ static unsigned int spooftcp_tg4(struct sk_buff *oskb, const struct xt_action_pa
 	if (info->corrupt_chksum)
 		tcph->check = ~tcph->check;
 
-#if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV4)
+#if IS_ENABLED(CONFIG_NF_CONNTRACK)
 	/* Do not track this spoofed packet */
 #	if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	nf_reset(nskb);
@@ -266,7 +266,7 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 	if (info->corrupt_chksum)
 		tcph->check = ~tcph->check;
 
-#if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV6)
+#if IS_ENABLED(CONFIG_NF_CONNTRACK)
 	/* Do not track this spoofed packet */
 #	if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	nf_reset(nskb);
