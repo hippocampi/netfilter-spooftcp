@@ -13,6 +13,7 @@ enum {
 	O_CORRUPT_SEQ,
 	O_DELAY,
 	O_PAYLOAD_LEN,
+	O_MD5_HEADER,
 };
 
 /* Copied from libxt_tcp.c */
@@ -86,7 +87,8 @@ static void SPOOFTCP_help()
 		" --corrupt-checksum\tInvert checksum for spoofed packet\n"
 		" --corrupt-seq\tInvert TCP SEQ # for spoofed packet\n"
 		" --delay value\tDelay the matched(original) packet by <value> ms (max 255)\n"
-		" --payload-length value\tLength of TCP payload (max 255)\n");
+		" --payload-length value\tLength of TCP payload (max 255)\n"
+		" --add-md5-header\tAdd TCP MD5 (Option 19) header\n");
 }
 
 static const struct xt_option_entry SPOOFTCP_opts[] = {
@@ -129,6 +131,11 @@ static const struct xt_option_entry SPOOFTCP_opts[] = {
 		.max	= UINT8_MAX,
 		.flags	= XTOPT_PUT, XTOPT_POINTER(struct xt_spooftcp_info, payload_len),
 	},
+	{
+		.name	= "add-md5-header",
+		.id	= O_MD5_HEADER,
+		.type	= XTTYPE_NONE,
+	},
 	XTOPT_TABLEEND,
 };
 
@@ -153,6 +160,9 @@ static void SPOOFTCP_parse(struct xt_option_call *cb)
 			break;
 		case O_CORRUPT_SEQ:
 			info->corrupt_seq = true;
+			break;
+		case O_MD5_HEADER:
+			info->md5_header = true;
 			break;
 	}
 }
@@ -191,6 +201,10 @@ static void SPOOFTCP_print(const void *ip, const struct xt_entry_target *target,
 
 	if (info->payload_len)
 		printf(" Payload length %u", info->payload_len);
+
+	if (info->md5_header)
+		printf(" with MD5 header");
+
 }
 
 static void SPOOFTCP_save(const void *ip, const struct xt_entry_target *target)
@@ -215,6 +229,9 @@ static void SPOOFTCP_save(const void *ip, const struct xt_entry_target *target)
 
 	if (info->payload_len)
 		printf(" --%s %u", SPOOFTCP_opts[O_PAYLOAD_LEN].name, info->payload_len);
+
+	if (info->md5_header)
+		printf(" --%s", SPOOFTCP_opts[O_MD5_HEADER].name);
 }
 
 static struct xtables_target spooftcp_tg_reg = {

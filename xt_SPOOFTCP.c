@@ -31,11 +31,12 @@ static DEFINE_PER_CPU(bool, spooftcp_active);
 static struct tcphdr * spooftcp_tcphdr_put(struct sk_buff *nskb, const struct tcphdr *otcph, const struct xt_spooftcp_info *info)
 {
 	struct tcphdr *tcph;
+	u_int8_t * tcpopt;
 
 	skb_reset_transport_header(nskb);
-	tcph = (struct tcphdr *)skb_put(nskb, sizeof(struct tcphdr) + info->payload_len);
+	tcph = (struct tcphdr *)skb_put(nskb, sizeof(struct tcphdr) +
+		   (info->md5_header ? MD5_HEADER_SIZE : 0) + info->payload_len);
 
-	/* Truncate to length (no data) */
 	tcph->doff = sizeof(struct tcphdr)/4;
 	tcph->source = otcph->source;
 	tcph->dest = otcph->dest;
@@ -49,6 +50,21 @@ static struct tcphdr * spooftcp_tcphdr_put(struct sk_buff *nskb, const struct tc
 	tcph->ack_seq = otcph->ack_seq;
 	tcph->window = 0;
 	tcph->urg_ptr = 0;
+
+	/* Fill MD5 option */
+	if (info->md5_header) {
+		tcpopt = (u_int8_t *)tcph + sizeof(struct tcphdr);
+		tcph->doff += MD5_HEADER_SIZE/4;
+		tcpopt[0] = 19; /* Kind = 19 */
+		tcpopt[1] = 18; /* Length = 18 */
+		get_random_bytes(tcpopt + 2, 18);
+		tcpopt[18] = 1; /* NOP */
+		tcpopt[19] = 0; /* EOL */
+	}
+
+	/* Fill data */
+	if (info->payload_len)
+		get_random_bytes((u_int8_t *)tcph + tcph->doff * 4, info->payload_len);
 
 	return tcph;
 }
@@ -96,6 +112,7 @@ static unsigned int spooftcp_tg4(struct sk_buff *oskb, const struct xt_action_pa
 	}
 	
 	nskb = alloc_skb(sizeof(struct iphdr) + sizeof(struct tcphdr) +
+			 (info->md5_header ? MD5_HEADER_SIZE : 0) +
 			 LL_MAX_HEADER + info->payload_len,
 			 GFP_ATOMIC);
 
@@ -130,7 +147,7 @@ static unsigned int spooftcp_tg4(struct sk_buff *oskb, const struct xt_action_pa
 
 	tcph = spooftcp_tcphdr_put(nskb, otcph, info);
 
-	tcph->check = ~tcp_v4_check(sizeof(struct tcphdr) + info->payload_len, iph->saddr,
+	tcph->check = ~tcp_v4_check(sizeof(struct tcphdr) + info->payload_len + (info->md5_header ? MD5_HEADER_SIZE : 0), iph->saddr,
 				    iph->daddr, 0);
 	nskb->ip_summed = CHECKSUM_PARTIAL;
 	nskb->csum_start = (unsigned char *)tcph - nskb->head;
@@ -231,7 +248,8 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 	hh_len = (dst->dev->hard_header_len + 15)&~15;
 	
 	nskb = alloc_skb(hh_len + 15 + dst->header_len + sizeof(struct ipv6hdr)
-			 + sizeof(struct tcphdr) + dst->trailer_len + info->payload_len,
+			 + sizeof(struct tcphdr) + dst->trailer_len + info->payload_len +
+			 (info->md5_header ? MD5_HEADER_SIZE : 0),
 			 GFP_ATOMIC);
 
 	if (unlikely(!nskb)) {
@@ -259,9 +277,9 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 	tcph->check = 0;
 	tcph->check = csum_ipv6_magic(&ipv6_hdr(nskb)->saddr,
 				      &ipv6_hdr(nskb)->daddr,
-				      sizeof(struct tcphdr) + info->payload_len, IPPROTO_TCP,
+				      sizeof(struct tcphdr) + info->payload_len + (info->md5_header ? MD5_HEADER_SIZE : 0), IPPROTO_TCP,
 				      csum_partial(tcph,
-						   sizeof(struct tcphdr) + info->payload_len, 0));
+						   sizeof(struct tcphdr) + info->payload_len + (info->md5_header ? MD5_HEADER_SIZE : 0), 0));
 	
 	if (info->corrupt_chksum)
 		tcph->check = ~tcph->check;

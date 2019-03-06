@@ -20,7 +20,7 @@ mod:
 	make -C $(KERNEL_DIR) M=$(PWD) modules
 clean:
 	make -C $(KERNEL_DIR) M=$(PWD) clean
-	-rm libxt_SPOOFTCP.so libxt_SPOOFTCP.o
+	rm -f libxt_SPOOFTCP.so libxt_SPOOFTCP.o
 install: all
 	install -m 0644 libxt_SPOOFTCP.so /lib/xtables/
 	modprobe ip6_tables
