@@ -35,6 +35,7 @@ static struct tcphdr * spooftcp_tcphdr_put(struct sk_buff *nskb, const struct tc
 
 	skb_reset_transport_header(nskb);
 	tcph = (struct tcphdr *)skb_put(nskb, sizeof(struct tcphdr));
+	memset(tcph, 0, sizeof(struct tcphdr));
 	tcph->doff = sizeof(struct tcphdr)/4;
 	tcph->source = otcph->source;
 	tcph->dest = otcph->dest;
@@ -46,8 +47,6 @@ static struct tcphdr * spooftcp_tcphdr_put(struct sk_buff *nskb, const struct tc
 		tcph->seq = otcph->seq;
 	
 	tcph->ack_seq = otcph->ack_seq;
-	tcph->window = 0;
-	tcph->urg_ptr = 0;
 
 	/* Fill MD5 option */
 	if (info->md5_header) {
