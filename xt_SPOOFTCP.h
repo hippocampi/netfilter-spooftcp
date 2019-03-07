@@ -10,10 +10,16 @@ struct xt_spooftcp_info {
     __u8 corrupt_seq;
     __u8 delay;
     __u8 payload_len;
-    __u8 md5_header;
+    __u8 md5;
+    __u8 ts;
 };
 
-/* MD5 header size, aligned */
-#define MD5_HEADER_SIZE 20
+/* MD5 option */
+#define OPT_MD5_KIND 19
+#define OPT_MD5_SIZE 18
+
+/* TS option */
+#define OPT_TS_KIND 8
+#define OPT_TS_SIZE 10
 
 #endif /* _XT_SPOOFTCP_TARGET_H */
