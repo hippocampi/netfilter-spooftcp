@@ -34,9 +34,7 @@ static struct tcphdr * spooftcp_tcphdr_put(struct sk_buff *nskb, const struct tc
 	u_int8_t * tcpopt;
 
 	skb_reset_transport_header(nskb);
-	tcph = (struct tcphdr *)skb_put(nskb, sizeof(struct tcphdr) +
-		   (info->md5_header ? MD5_HEADER_SIZE : 0) + info->payload_len);
-
+	tcph = (struct tcphdr *)skb_put(nskb, sizeof(struct tcphdr));
 	tcph->doff = sizeof(struct tcphdr)/4;
 	tcph->source = otcph->source;
 	tcph->dest = otcph->dest;
@@ -53,18 +51,21 @@ static struct tcphdr * spooftcp_tcphdr_put(struct sk_buff *nskb, const struct tc
 
 	/* Fill MD5 option */
 	if (info->md5_header) {
-		tcpopt = (u_int8_t *)tcph + sizeof(struct tcphdr);
+		skb_put(nskb, MD5_HEADER_SIZE);
 		tcph->doff += MD5_HEADER_SIZE/4;
+		tcpopt = (u_int8_t *)tcph + sizeof(struct tcphdr);
 		tcpopt[0] = 19; /* Kind = 19 */
 		tcpopt[1] = 18; /* Length = 18 */
-		get_random_bytes(tcpopt + 2, 18);
+		get_random_bytes(tcpopt + 2, 16);
 		tcpopt[18] = 1; /* NOP */
 		tcpopt[19] = 0; /* EOL */
 	}
 
 	/* Fill data */
-	if (info->payload_len)
+	if (info->payload_len) {
+		skb_put(nskb, info->payload_len);
 		get_random_bytes((u_int8_t *)tcph + tcph->doff * 4, info->payload_len);
+	}
 
 	return tcph;
 }
