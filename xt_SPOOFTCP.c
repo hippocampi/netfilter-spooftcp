@@ -4,6 +4,7 @@
 #include <linux/version.h>
 #include <linux/percpu.h>
 #include <linux/delay.h>
+#include <linux/inetdevice.h>
 #include <net/ip.h>
 #include <net/ipv6.h>
 #include <net/ip6_checksum.h>
@@ -156,7 +157,13 @@ static unsigned int spooftcp_tg4(struct sk_buff *oskb, const struct xt_action_pa
 	iph->frag_off	= htons(IP_DF);
 	iph->protocol	= IPPROTO_TCP;
 	iph->check	= 0;
-	iph->saddr	= oiph->saddr;
+
+	if (info->masq) {
+		iph->saddr	= inet_select_addr(xt_out(par), 0, RT_SCOPE_UNIVERSE);
+	} else {
+		iph->saddr	= oiph->saddr;
+	}
+
 	iph->daddr	= oiph->daddr;
 	if (info->ttl)
 		iph->ttl = info->ttl;

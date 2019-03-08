@@ -12,6 +12,7 @@ struct xt_spooftcp_info {
     __u8 payload_len;
     __u8 md5;
     __u8 ts;
+    __u8 masq;
 };
 
 /* MD5 option */

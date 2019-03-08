@@ -15,6 +15,7 @@ enum {
 	O_PAYLOAD_LEN,
 	O_MD5_OPT,
 	O_TS_OPT,
+	O_MASQ,
 };
 
 /* Copied from libxt_tcp.c */
@@ -90,7 +91,8 @@ static void SPOOFTCP_help()
 		" --delay value\tDelay the matched(original) packet by <value> ms (max 255)\n"
 		" --payload-length value\tLength of TCP payload (max 255)\n"
 		" --md5\tAdd TCP MD5 (Option 19) header\n"
-		" --ts\tAdd TCP Timestamp (Option 8) header\n");
+		" --ts\tAdd TCP Timestamp (Option 8) header\n"
+		" --masq\tEnable MASQUERADE workaround\n");
 }
 
 static const struct xt_option_entry SPOOFTCP_opts[] = {
@@ -143,6 +145,11 @@ static const struct xt_option_entry SPOOFTCP_opts[] = {
 		.id	= O_TS_OPT,
 		.type	= XTTYPE_NONE,
 	},
+	{
+		.name	= "masq",
+		.id	= O_MASQ,
+		.type	= XTTYPE_NONE,
+	},
 	XTOPT_TABLEEND,
 };
 
@@ -173,6 +180,9 @@ static void SPOOFTCP_parse(struct xt_option_call *cb)
 			break;
 		case O_TS_OPT:
 			info->ts = true;
+			break;
+		case O_MASQ:
+			info->masq = true;
 			break;
 	}
 }
@@ -218,6 +228,8 @@ static void SPOOFTCP_print(const void *ip, const struct xt_entry_target *target,
 	if (info->ts)
 		printf(" with Timestamp option");
 
+	if (info->masq)
+		printf(" with MASQUERADE workaround");
 }
 
 static void SPOOFTCP_save(const void *ip, const struct xt_entry_target *target)
@@ -248,6 +260,9 @@ static void SPOOFTCP_save(const void *ip, const struct xt_entry_target *target)
 
 	if (info->ts)
 		printf(" --%s", SPOOFTCP_opts[O_TS_OPT].name);
+
+	if (info->masq)
+		printf(" --%s", SPOOFTCP_opts[O_MASQ].name);
 }
 
 static struct xtables_target spooftcp_tg_reg = {

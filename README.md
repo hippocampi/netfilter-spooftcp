@@ -29,4 +29,5 @@ There are mechanisms to prevent the spoofed packets from being tracked by nf_con
 
 Known issue
 ===========
-Incompatible with SNAT because the spoofed packets bypass nf_conntrack.
+Incompatible with SNAT because the spoofed packets bypass nf_conntrack.  
+Use `--masq` parameter as a workaround, but it won't work in case of port changes
