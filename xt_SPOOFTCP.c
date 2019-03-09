@@ -157,7 +157,11 @@ static unsigned int spooftcp_tg4(struct sk_buff *oskb, const struct xt_action_pa
 	iph->check	= 0;
 
 	if (info->masq) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 		iph->saddr	= inet_select_addr(xt_out(par), 0, RT_SCOPE_UNIVERSE);
+#else
+		iph->saddr	= inet_select_addr(par->out, 0, RT_SCOPE_UNIVERSE);
+#endif
 	} else {
 		iph->saddr	= oiph->saddr;
 	}
@@ -291,7 +295,17 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 	ip6_flow_hdr(ip6h, 0, 0);
 	ip6h->hop_limit = info->ttl ? info->ttl : oip6h->hop_limit;
 	ip6h->nexthdr = IPPROTO_TCP;
-	ip6h->saddr = oip6h->saddr;
+
+	if (info->masq) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+		ipv6_dev_get_saddr(net, xt_out(par), &oip6h->daddr, 0, &ip6h->saddr);
+#else
+		ipv6_dev_get_saddr(net, par->out, &oip6h->daddr, 0, &ip6h->saddr);
+#endif
+	} else {
+		ip6h->saddr = oip6h->saddr;
+	}
+
 	ip6h->daddr = oip6h->daddr;
 	nskb->protocol = htons(ETH_P_IPV6);
 
