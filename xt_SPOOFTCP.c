@@ -122,8 +122,6 @@ static unsigned int spooftcp_tg4(struct sk_buff *oskb, const struct xt_action_pa
 	net = xt_net(par);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
 	net = par->net;
-#else
-	net = dev_net(oskb->dev);
 #endif
 
 	dst = dst_clone(skb_dst(oskb));
@@ -263,8 +261,6 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 	net = xt_net(par);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
 	net = par->net;
-#else
-	net = dev_net(oskb->dev);
 #endif
 
 	dst = dst_clone(skb_dst(oskb));
@@ -292,7 +288,6 @@ static unsigned int spooftcp_tg6(struct sk_buff *oskb, const struct xt_action_pa
 	skb_put(nskb, sizeof(struct ipv6hdr));
 	skb_reset_network_header(nskb);
 	ip6h = ipv6_hdr(nskb);
-	// ip6_flow_hdr(ip6h, ip6_tclass(ip6_flowinfo(oip6h)), ip6_flowlabel(oip6h));
 	ip6_flow_hdr(ip6h, 0, 0);
 	ip6h->hop_limit = info->ttl ? info->ttl : oip6h->hop_limit;
 	ip6h->nexthdr = IPPROTO_TCP;
