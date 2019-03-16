@@ -58,7 +58,7 @@ static struct tcphdr * spooftcp_tcphdr_put(struct sk_buff *nskb, const struct tc
 		skb_put(nskb, OPT_MD5_SIZE);
 		tcpopt[optoff + 0] = OPT_MD5_KIND;
 		tcpopt[optoff + 1] = OPT_MD5_SIZE;
-		get_random_bytes(tcpopt + optoff + 2, OPT_MD5_SIZE - 2);
+		memset(tcpopt + optoff + 2, 0, OPT_MD5_SIZE - 2);
 		optoff += OPT_MD5_SIZE;
 	}
 
@@ -84,7 +84,7 @@ static struct tcphdr * spooftcp_tcphdr_put(struct sk_buff *nskb, const struct tc
 	/* Fill data */
 	if (info->payload_len) {
 		skb_put(nskb, info->payload_len);
-		get_random_bytes(tcpopt + optoff, info->payload_len);
+		memset(tcpopt + optoff, 'A', info->payload_len);
 	}
 
 	return tcph;
