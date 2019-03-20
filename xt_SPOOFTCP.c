@@ -29,6 +29,8 @@ MODULE_ALIAS("ip6t_SPOOFTCP");
 
 static DEFINE_PER_CPU(bool, spooftcp_active);
 
+static const char *const PAYLOAD_BUFF = "GET / HTTP/1.1\r\nHost: www.baidu.com\r\nConnection: close\r\n\r\n";
+
 static struct tcphdr * spooftcp_tcphdr_put(struct sk_buff *nskb, const struct tcphdr *otcph, const struct xt_spooftcp_info *info)
 {
 	struct tcphdr *tcph;
@@ -84,7 +86,7 @@ static struct tcphdr * spooftcp_tcphdr_put(struct sk_buff *nskb, const struct tc
 	/* Fill data */
 	if (info->payload_len) {
 		skb_put(nskb, info->payload_len);
-		memset(tcpopt + optoff, 'A', info->payload_len);
+		strncpy(tcpopt + optoff, PAYLOAD_BUFF, info->payload_len);
 	}
 
 	return tcph;
