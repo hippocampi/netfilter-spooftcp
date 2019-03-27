@@ -356,7 +356,6 @@ static struct xt_target spooftcp_tg_regs[] __read_mostly = {
 		.target		= spooftcp_tg4,
 		.targetsize 	= sizeof(struct xt_spooftcp_info),
 		.hooks		= 1 << NF_INET_POST_ROUTING,
-		.table		= "mangle",
 		.proto		= IPPROTO_TCP,
 		.me		= THIS_MODULE,
 	},
@@ -366,7 +365,6 @@ static struct xt_target spooftcp_tg_regs[] __read_mostly = {
 		.target		= spooftcp_tg6,
 		.targetsize 	= sizeof(struct xt_spooftcp_info),
 		.hooks		= 1 << NF_INET_POST_ROUTING,
-		.table		= "mangle",
 		.proto		= IPPROTO_TCP,
 		.me		= THIS_MODULE,
 	}
