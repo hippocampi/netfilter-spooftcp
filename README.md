@@ -30,4 +30,8 @@ There are mechanisms to prevent the spoofed packets from being tracked by nf_con
 Known issue
 ===========
 Incompatible with SNAT because the spoofed packets bypass nf_conntrack.  
-Use `--masq` parameter as a workaround, but it won't work in case of port changes
+
+Use **either** one of the workarounds below:  
+1. Use `--masq` parameter. It re-implements `MASQUERADE` statelessly, but it won't work in case of port changes or custom SNAT rules.
+2. [Patch the kernel](https://github.com/LGA1150/iptables-raw-POSTROUTING) to add a chain in `raw` table. The chain is hooked after SNAT.
+	Tested on kernel 4.14 and 4.19
